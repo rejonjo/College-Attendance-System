@@ -1,0 +1,328 @@
+/* ─── Google Font ─── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ─── Root Variables ─── */
+:root {
+    --primary:   #1a73e8;
+    --success:   #28a745;
+    --danger:    #dc3545;
+    --warning:   #ffc107;
+    --light-bg:  #f4f6fb;
+    --card-radius: 14px;
+    --shadow:    0 4px 20px rgba(0,0,0,0.08);
+}
+
+/* ─── Base ─── */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--light-bg);
+    color: #2d3748;
+}
+
+/* ─── Navbar ─── */
+.navbar {
+    background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%) !important;
+    box-shadow: 0 2px 12px rgba(26,115,232,0.4);
+    padding: 12px 0;
+}
+
+.navbar-brand {
+    font-size: 1.2rem;
+    letter-spacing: 0.3px;
+}
+
+/* ─── Card Base ─── */
+.card {
+    border-radius: var(--card-radius) !important;
+    box-shadow: var(--shadow);
+}
+
+/* ─── Card Header Custom ─── */
+.card-header-custom {
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    border-radius: var(--card-radius) var(--card-radius) 0 0;
+    padding: 18px;
+}
+
+/* ─── Hero Section (index) ─── */
+.hero-section {
+    background: linear-gradient(135deg, #e3f0ff 0%, #f4f6fb 100%);
+    border-radius: var(--card-radius);
+    padding: 55px 30px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+}
+
+.hero-section h1 {
+    color: #1a237e;
+}
+
+/* ─── Feature Cards (index) ─── */
+.feature-card {
+    border-radius: var(--card-radius) !important;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 30px rgba(26,115,232,0.2) !important;
+}
+
+/* ─── Input Group ─── */
+.input-group-text {
+    background-color: #f8f9fa;
+    border-right: none;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
+}
+
+/* ─── Buttons ─── */
+.btn-primary {
+    background: linear-gradient(135deg, #1a73e8, #1557b0);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #1557b0, #0d3d8a);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(26,115,232,0.4);
+}
+
+.btn-success {
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.btn-danger {
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+/* ─── Camera Container ─── */
+.camera-container {
+    width: 420px;
+    max-width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.camera-placeholder {
+    width: 420px;
+    max-width: 100%;
+    height: 250px;
+    background: #f0f4ff;
+    border: 3px dashed #1a73e8;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ─── Step Indicators ─── */
+.step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.step-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #718096;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s ease;
+}
+
+.step-circle.active {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 0 0 5px rgba(26,115,232,0.25);
+}
+
+.step-circle.done {
+    background: var(--success);
+    color: #fff;
+}
+
+.step-line {
+    width: 80px;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    margin-bottom: 20px;
+    transition: background 0.5s ease;
+}
+
+/* ─── Avatar Circles ─── */
+.avatar-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    color: #fff;
+    font-size: 1.4rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.avatar-circle-sm {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ─── Attendance Success Card ─── */
+.attendance-success {
+    background: linear-gradient(135deg, #f0fff4, #e6ffed);
+    border: 2px solid #28a745 !important;
+    border-radius: var(--card-radius) !important;
+}
+
+.success-icon {
+    animation: pop 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+
+@keyframes pop {
+    0%   { transform: scale(0);   opacity: 0; }
+    80%  { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+/* ─── Stat Cards (Admin Dashboard) ─── */
+.stat-card {
+    border-radius: var(--card-radius) !important;
+    transition: transform 0.25s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.bg-primary-light { background: #dbeafe; }
+.bg-success-light { background: #d1fae5; }
+.bg-danger-light  { background: #fee2e2; }
+.bg-warning-light { background: #fef3c7; }
+
+/* ─── Quick Link Cards ─── */
+.quick-link-card {
+    border-radius: var(--card-radius) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.quick-link-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12) !important;
+}
+
+/* ─── Tables ─── */
+.table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 0.93rem;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #eef3fd;
+}
+
+/* ─── Badges ─── */
+.badge {
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border-radius: 6px;
+    padding: 5px 10px;
+}
+
+/* ─── Progress Bar ─── */
+.progress {
+    border-radius: 10px;
+    background: #e9ecef;
+}
+
+.progress-bar {
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.78rem;
+}
+
+/* ─── Alert ─── */
+.alert {
+    border-radius: 10px;
+    border: none;
+}
+
+.alert-info    { background: #e8f4fd; color: #0c63a0; }
+.alert-success { background: #d4edda; color: #155724; }
+.alert-danger  { background: #f8d7da; color: #721c24; }
+.alert-warning { background: #fff3cd; color: #856404; }
+
+/* ─── Footer ─── */
+footer {
+    background: #fff;
+    font-size: 0.88rem;
+    margin-top: 40px;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar       { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #a0aec0; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #718096; }
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+    .hero-section { padding: 35px 20px; }
+    .camera-container,
+    .camera-placeholder { width: 100%; }
+    .step-line { width: 45px; }
+    .display-6 { font-size: 1.8rem; }
+}

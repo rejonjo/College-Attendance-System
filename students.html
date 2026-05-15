@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}Student Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0">
+        <i class="fas fa-users me-2 text-primary"></i>Student Management
+    </h3>
+    <span class="badge bg-secondary fs-6">{{ students|length }} Students</span>
+</div>
+
+<!-- Search Bar -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-2 px-3">
+        <div class="input-group">
+            <span class="input-group-text bg-white border-0">
+                <i class="fas fa-search text-muted"></i>
+            </span>
+            <input type="text" id="searchInput" class="form-control border-0"
+                   placeholder="Search by name, register no, department...">
+        </div>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="studentsTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Register No</th>
+                        <th>Department</th>
+                        <th>Email</th>
+                        <th>Face</th>
+                        <th>Days Present</th>
+                        <th>Joined</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in students %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle-sm me-2">
+                                    {{ s.name[0].upper() }}
+                                </div>
+                                <strong>{{ s.name }}</strong>
+                            </div>
+                        </td>
+                        <td><code>{{ s.register_no }}</code></td>
+                        <td>
+                            <span class="badge bg-secondary">{{ s.department }}</span>
+                        </td>
+                        <td>
+                            <small>{{ s.email }}</small>
+                        </td>
+                        <td>
+                            {% if s.face_encodings %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check me-1"></i>Done
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-clock me-1"></i>Pending
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">{{ s.total_present }}</span>
+                        </td>
+                        <td><small>{{ s.joined }}</small></td>
+                        <td>
+                            <form method="POST"
+                                  action="{{ url_for('delete_student', sid=s.id) }}"
+                                  onsubmit="return confirm('⚠️ Delete {{ s.name }}?\nThis will permanently delete all their attendance records!')">
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer bg-white text-muted">
+        <small>Total registered students: <strong>{{ students|length }}</strong></small>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function () {
+    const filter = this.value.toLowerCase();
+    document.querySelectorAll('#studentsTable tbody tr').forEach(row => {
+        row.style.display =
+            row.textContent.toLowerCase().includes(filter) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

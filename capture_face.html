@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% block title %}Face Registration{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card shadow border-0">
+            <div class="card-header-custom text-white text-center py-3">
+                <h4 class="mb-1"><i class="fas fa-camera me-2"></i>Face Dataset Registration</h4>
+                <small>Welcome, {{ session.get('student_name','') }}! Register your face to continue.</small>
+            </div>
+            <div class="card-body p-4">
+
+                <!-- Instructions -->
+                <div class="alert alert-info d-flex align-items-start" id="instructions">
+                    <i class="fas fa-info-circle me-2 mt-1 flex-shrink-0"></i>
+                    <div>
+                        <strong>Instructions:</strong>
+                        <ul class="mb-0 mt-1">
+                            <li>Ensure <strong>good lighting</strong> on your face</li>
+                            <li>Keep your face <strong>centered</strong> in the frame</li>
+                            <li>System will auto-capture <strong>20 images</strong></li>
+                            <li>Slightly move your head for better accuracy</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Camera Area -->
+                <div class="text-center">
+                    <div class="camera-container mx-auto mb-3 position-relative">
+                        <video id="video" width="420" height="315" autoplay muted
+                               class="rounded" style="display:none; max-width:100%;
+                               border:3px solid #1a73e8;"></video>
+                        <canvas id="canvas" width="420" height="315"
+                                style="display:none;"></canvas>
+
+                        <!-- Placeholder -->
+                        <div id="cam-placeholder" class="camera-placeholder">
+                            <i class="fas fa-camera fa-4x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">Camera not started</p>
+                            <small class="text-muted">Click "Start Camera" below</small>
+                        </div>
+                    </div>
+
+                    <!-- Progress -->
+                    <div id="progress-section" class="mb-3" style="display:none;">
+                        <p class="fw-semibold mb-2" id="progress-text">
+                            <i class="fas fa-circle-notch fa-spin me-2 text-primary"></i>
+                            Capturing: 0 / 20
+                        </p>
+                        <div class="progress" style="height:22px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                                 id="progress-bar" style="width:0%;">0%</div>
+                        </div>
+                        <small class="text-muted mt-1 d-block">Please stay still and face the camera...</small>
+                    </div>
+
+                    <!-- Result -->
+                    <div id="result-section" class="mb-3"></div>
+
+                    <!-- Buttons -->
+                    <div id="btn-section">
+                        <button class="btn btn-primary btn-lg" id="startCameraBtn"
+                                onclick="startCamera()">
+                            <i class="fas fa-video me-2"></i>Start Camera
+                        </button>
+                        <button class="btn btn-success btn-lg ms-2"
+                                id="captureBtn" onclick="startCapturing()"
+                                style="display:none;">
+                            <i class="fas fa-camera-retro me-2"></i>Start Auto Capture
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let videoStream    = null;
+let capturedImages = [];
+let captureCount   = 0;
+let captureInterval = null;
+const TOTAL_CAPTURES = 20;
+
+const video  = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+
+async function startCamera() {
+    const btn = document.getElementById('startCameraBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting Camera...';
+
+    try {
+        videoStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 420, height: 315, facingMode: 'user' }
+        });
+        video.srcObject = videoStream;
+        document.getElementById('cam-placeholder').style.display = 'none';
+        video.style.display = 'block';
+        btn.style.display = 'none';
+        document.getElementById('captureBtn').style.display = 'inline-block';
+        document.getElementById('instructions').style.display = 'none';
+    } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-video me-2"></i>Start Camera';
+        showResult(false, '❌ Camera access denied! Please allow camera permission in your browser and try again.');
+    }
+}
+
+function startCapturing() {
+    capturedImages = [];
+    captureCount   = 0;
+
+    document.getElementById('captureBtn').disabled = true;
+    document.getElementById('captureBtn').innerHTML =
+        '<i class="fas fa-spinner fa-spin me-2"></i>Capturing...';
+    document.getElementById('progress-section').style.display = 'block';
+    document.getElementById('result-section').innerHTML = '';
+
+    captureInterval = setInterval(() => {
+        if (captureCount >= TOTAL_CAPTURES) {
+            clearInterval(captureInterval);
+            sendToServer();
+            return;
+        }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        capturedImages.push(canvas.toDataURL('image/jpeg', 0.85));
+        captureCount++;
+
+        const pct = Math.round((captureCount / TOTAL_CAPTURES) * 100);
+        document.getElementById('progress-text').innerHTML =
+            `<i class="fas fa-circle-notch fa-spin me-2 text-primary"></i>
+             Capturing: <strong>${captureCount}</strong> / ${TOTAL_CAPTURES}`;
+        document.getElementById('progress-bar').style.width = pct + '%';
+        document.getElementById('progress-bar').textContent  = pct + '%';
+    }, 800);
+}
+
+async function sendToServer() {
+    // Stop camera
+    if (videoStream) {
+        videoStream.getTracks().forEach(t => t.stop());
+        video.style.display = 'none';
+    }
+
+    document.getElementById('progress-text').innerHTML =
+        '<i class="fas fa-cloud-upload-alt fa-spin me-2 text-success"></i>Saving face data... please wait.';
+    document.getElementById('btn-section').style.display = 'none';
+
+    try {
+        const resp = await fetch('/save_face', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ images: capturedImages })
+        });
+        const data = await resp.json();
+        document.getElementById('progress-section').style.display = 'none';
+
+        if (data.success) {
+            showResult(true, data.message);
+            setTimeout(() => { window.location.href = '/login'; }, 2800);
+        } else {
+            showResult(false, data.message);
+            document.getElementById('btn-section').style.display = 'block';
+            const sBtn = document.getElementById('startCameraBtn');
+            sBtn.style.display = 'inline-block';
+            sBtn.disabled = false;
+            sBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Try Again';
+            document.getElementById('captureBtn').style.display = 'none';
+        }
+    } catch (err) {
+        document.getElementById('progress-section').style.display = 'none';
+        showResult(false, 'Network error! Please check your connection and try again.');
+        document.getElementById('btn-section').style.display = 'block';
+    }
+}
+
+function showResult(success, msg) {
+    const cls  = success ? 'alert-success' : 'alert-danger';
+    const icon = success ? 'fa-check-circle' : 'fa-times-circle';
+    document.getElementById('result-section').innerHTML = `
+        <div class="alert ${cls} text-start">
+            <i class="fas ${icon} me-2"></i>${msg}
+            ${success ? '<br><small><i class="fas fa-arrow-right me-1"></i>Redirecting to login page...</small>' : ''}
+        </div>`;
+}
+</script>
+{% endblock %}

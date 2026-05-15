@@ -1,0 +1,450 @@
+{% extends 'base.html' %}
+{% block title %}Attendance Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0">
+        <i class="fas fa-chart-line me-2 text-primary"></i>
+        Attendance Analytics & Clustering
+    </h3>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Dashboard
+    </a>
+</div>
+
+<!-- ─── Summary Stats ─── -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="text-primary fs-1 fw-bold">{{ total_students }}</div>
+            <div class="text-muted fw-semibold">Total Students</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="text-info fs-1 fw-bold">{{ working_days }}</div>
+            <div class="text-muted fw-semibold">Working Days</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="text-success fs-1 fw-bold">{{ high_count }}</div>
+            <div class="text-muted fw-semibold">High Attendance (≥75%)</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="text-danger fs-1 fw-bold">{{ low_count }}</div>
+            <div class="text-muted fw-semibold">Low Attendance (<50%)</div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Row 1: Attendance Distribution Pie + Dept Bar ─── -->
+<div class="row g-4 mb-4">
+
+    <!-- Pie Chart -->
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-bold border-bottom py-3">
+                <i class="fas fa-chart-pie me-2 text-primary"></i>
+                Attendance Distribution
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="pieChart" width="320" height="320"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Department Bar Chart -->
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-bold border-bottom py-3">
+                <i class="fas fa-building me-2 text-success"></i>
+                Department-wise Avg Attendance %
+            </div>
+            <div class="card-body">
+                <canvas id="deptChart" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ─── Row 2: Daily Trend Line Chart ─── -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold border-bottom py-3">
+                <i class="fas fa-chart-line me-2 text-info"></i>
+                Daily Attendance Trend (Last 30 Days)
+            </div>
+            <div class="card-body">
+                <canvas id="trendChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Row 3: K-Means Scatter + Donut ─── -->
+<div class="row g-4 mb-4">
+
+    <!-- K-Means Scatter -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold border-bottom py-3">
+                <i class="fas fa-braille me-2 text-warning"></i>
+                K-Means Clustering (3 Clusters)
+                <span class="badge bg-warning text-dark ms-2">ML Model</span>
+            </div>
+            <div class="card-body">
+                <canvas id="scatterChart" height="300"></canvas>
+                <div class="d-flex justify-content-center gap-4 mt-3">
+                    <span><i class="fas fa-circle text-success me-1"></i>High Attendance (≥75%)</span>
+                    <span><i class="fas fa-circle text-warning me-1"></i>Medium (50–74%)</span>
+                    <span><i class="fas fa-circle text-danger me-1"></i>Low (&lt;50%)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cluster Donut -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-bold border-bottom py-3">
+                <i class="fas fa-circle-notch me-2 text-danger"></i>
+                Cluster Distribution
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="clusterDonut" width="260" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ─── Row 4: Student Percentage Bar ─── -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold border-bottom py-3">
+                <i class="fas fa-users me-2 text-primary"></i>
+                Individual Student Attendance %
+            </div>
+            <div class="card-body" style="overflow-x:auto;">
+                <canvas id="studentBar"
+                        height="80"
+                        style="min-width:{{ [students|length * 50, 600]|max }}px;">
+                </canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Row 5: Cluster Table ─── -->
+{% if cluster_data %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold border-bottom py-3">
+        <i class="fas fa-table me-2 text-primary"></i>
+        Student Cluster Classification
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="clusterTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Register No</th>
+                        <th>Department</th>
+                        <th>Days Present</th>
+                        <th>Percentage</th>
+                        <th>Cluster</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in cluster_data %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td><strong>{{ s.name }}</strong></td>
+                        <td><code>{{ s.register_no }}</code></td>
+                        <td><span class="badge bg-secondary">{{ s.department }}</span></td>
+                        <td>{{ s.days_present }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height:14px;">
+                                    <div class="progress-bar"
+                                         style="width:{{ [s.percentage,100]|min }}%;
+                                                background:{{ s.cluster_color }};">
+                                    </div>
+                                </div>
+                                <span class="fw-bold">{{ s.percentage }}%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge"
+                                  style="background:{{ s.cluster_color }};">
+                                {{ s.cluster_label }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ─── Chart.js ─────────────────────────────────────── -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+// ─── DATA FROM FLASK ────────────────────────────────────
+const students = {{ students | tojson }};
+const deptStats = {{ dept_stats | tojson }};
+const dailyTrend = {{ daily_trend | tojson }};
+const clusterData = {{ cluster_data | tojson }};
+const clusterSummary = {{ cluster_summary | tojson }};
+
+// ─── Color Helper ──────────────────────────────────────
+function pctColor(pct) {
+    if (pct >= 75) return '#28a745';
+    if (pct >= 50) return '#ffc107';
+    return '#dc3545';
+}
+
+// ─── 1. PIE CHART (Attendance Distribution) ───────────
+new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['High (≥75%)', 'Medium (50–74%)', 'Low (<50%)'],
+        datasets: [{
+            data: [
+                {{ high_count }},
+                {{ medium_count }},
+                {{ low_count }}
+            ],
+            backgroundColor: ['#28a745','#ffc107','#dc3545'],
+            borderWidth: 3,
+            borderColor: '#fff',
+            hoverOffset: 12
+        }]
+    },
+    options: {
+        responsive: false,
+        cutout: '60%',
+        plugins: {
+            legend: { position: 'bottom', labels: { padding: 14, font: { size: 13 } } },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ` ${ctx.label}: ${ctx.raw} students`
+                }
+            }
+        }
+    }
+});
+
+// ─── 2. DEPARTMENT BAR CHART ──────────────────────────
+new Chart(document.getElementById('deptChart'), {
+    type: 'bar',
+    data: {
+        labels: deptStats.map(d => d.department),
+        datasets: [{
+            label: 'Avg Attendance %',
+            data: deptStats.map(d => d.avg_percentage || 0),
+            backgroundColor: deptStats.map(d => pctColor(d.avg_percentage || 0)),
+            borderRadius: 8,
+            borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ` ${ctx.raw}% avg attendance`
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: { callback: v => v + '%' },
+                grid: { color: '#f0f0f0' }
+            },
+            x: { grid: { display: false } }
+        }
+    }
+});
+
+// ─── 3. DAILY TREND LINE CHART ────────────────────────
+new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+        labels: dailyTrend.map(d => d.day),
+        datasets: [{
+            label: 'Students Present',
+            data: dailyTrend.map(d => d.count),
+            fill: true,
+            backgroundColor: 'rgba(26,115,232,0.12)',
+            borderColor: '#1a73e8',
+            borderWidth: 2.5,
+            pointBackgroundColor: '#1a73e8',
+            pointRadius: 5,
+            pointHoverRadius: 8,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ` ${ctx.raw} students present`
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: '#f0f0f0' },
+                ticks: { stepSize: 1 }
+            },
+            x: { grid: { display: false } }
+        }
+    }
+});
+
+// ─── 4. K-MEANS SCATTER CHART ─────────────────────────
+const clusterColors = {
+    'High (≥75%)':    '#28a745',
+    'Medium (50–74%)': '#ffc107',
+    'Low (<50%)':     '#dc3545'
+};
+
+const scatterDatasets = Object.keys(clusterColors).map(label => ({
+    label: label,
+    data: clusterData
+        .filter(s => s.cluster_label === label)
+        .map(s => ({ x: s.days_present, y: s.percentage, name: s.name, reg: s.register_no })),
+    backgroundColor: clusterColors[label] + 'cc',
+    borderColor:     clusterColors[label],
+    borderWidth: 1.5,
+    pointRadius: 8,
+    pointHoverRadius: 11
+}));
+
+new Chart(document.getElementById('scatterChart'), {
+    type: 'scatter',
+    data: { datasets: scatterDatasets },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+                callbacks: {
+                    label: ctx =>
+                        ` ${ctx.raw.name} (${ctx.raw.reg}) — ` +
+                        `${ctx.raw.x} days, ${ctx.raw.y}%`
+                }
+            }
+        },
+        scales: {
+            x: {
+                title: { display: true, text: 'Days Present', font: { size: 13 } },
+                grid: { color: '#f0f0f0' },
+                beginAtZero: true
+            },
+            y: {
+                title: { display: true, text: 'Attendance %', font: { size: 13 } },
+                min: 0,
+                max: 100,
+                ticks: { callback: v => v + '%' },
+                grid: { color: '#f0f0f0' }
+            }
+        }
+    }
+});
+
+// ─── 5. CLUSTER DONUT ────────────────────────────────
+const csLabels = Object.keys(clusterSummary);
+const csValues = Object.values(clusterSummary);
+const csColors = csLabels.map(l => clusterColors[l] || '#888');
+
+new Chart(document.getElementById('clusterDonut'), {
+    type: 'doughnut',
+    data: {
+        labels: csLabels,
+        datasets: [{
+            data: csValues,
+            backgroundColor: csColors,
+            borderWidth: 3,
+            borderColor: '#fff',
+            hoverOffset: 10
+        }]
+    },
+    options: {
+        responsive: false,
+        cutout: '65%',
+        plugins: {
+            legend: { position: 'bottom', labels: { padding: 12, font: { size: 12 } } },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ` ${ctx.label}: ${ctx.raw} students`
+                }
+            }
+        }
+    }
+});
+
+// ─── 6. INDIVIDUAL STUDENT BAR ────────────────────────
+const sNames = students.map(s => s.register_no || s.name);
+const sPerc  = students.map(s => s.percentage || 0);
+const sColors = sPerc.map(pctColor);
+
+new Chart(document.getElementById('studentBar'), {
+    type: 'bar',
+    data: {
+        labels: sNames,
+        datasets: [{
+            label: 'Attendance %',
+            data: sPerc,
+            backgroundColor: sColors,
+            borderRadius: 5,
+            borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    title: (items) => {
+                        const s = students[items[0].dataIndex];
+                        return `${s.name} (${s.register_no})`;
+                    },
+                    label: ctx => ` ${ctx.raw}% — ${students[ctx.dataIndex].days_present} days`
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: { callback: v => v + '%' },
+                grid: { color: '#f0f0f0' }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { maxRotation: 45, minRotation: 30, font: { size: 11 } }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

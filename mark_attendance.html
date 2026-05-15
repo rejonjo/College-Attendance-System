@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+{% block title %}Mark Attendance{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+
+        <!-- Student Info -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body d-flex align-items-center p-3">
+                <div class="avatar-circle me-3">
+                    {{ student_name[0].upper() if student_name else 'S' }}
+                </div>
+                <div>
+                    <h5 class="mb-0 fw-bold">{{ student_name }}</h5>
+                    <small class="text-muted">
+                        <i class="fas fa-id-card me-1"></i>{{ register_no }}
+                        &nbsp;|&nbsp;
+                        <i class="fas fa-building me-1"></i>{{ department }}
+                    </small>
+                </div>
+                <div class="ms-auto text-end">
+                    <span class="badge bg-primary fs-6">
+                        <i class="fas fa-calendar me-1"></i>{{ today }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        {% if already_marked %}
+        <!-- ─── Already Marked ─── -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center p-5">
+                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                <h4 class="text-success fw-bold">Attendance Already Marked!</h4>
+                <p class="text-muted mb-0">
+                    Your attendance for today <strong>({{ today }})</strong> has been recorded.
+                </p>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- ─── Step Indicators ─── -->
+        <div class="d-flex justify-content-center align-items-center mb-4">
+            <div class="step-item">
+                <div class="step-circle active" id="s1">1</div>
+                <small class="text-muted">Location</small>
+            </div>
+            <div class="step-line" id="line1"></div>
+            <div class="step-item">
+                <div class="step-circle" id="s2">2</div>
+                <small class="text-muted">Face Scan</small>
+            </div>
+            <div class="step-line" id="line2"></div>
+            <div class="step-item">
+                <div class="step-circle" id="s3">3</div>
+                <small class="text-muted">Done</small>
+            </div>
+        </div>
+
+        <!-- ─── Step 1: Location ─── -->
+        <div class="card border-0 shadow-sm mb-3" id="location-card">
+            <div class="card-body text-center p-4">
+                <i class="fas fa-map-marker-alt fa-2x text-danger mb-2"></i>
+                <h5 class="fw-bold">Step 1 — Location Verification</h5>
+                <p class="text-muted mb-3" id="location-status">
+                    Click the button to verify you are on campus.
+                </p>
+                <div id="location-details" class="alert alert-light py-2 mb-3"
+                     style="display:none;"></div>
+                <button class="btn btn-danger btn-lg" id="locationBtn"
+                        onclick="getLocation()">
+                    <i class="fas fa-location-arrow me-2"></i>Verify My Location
+                </button>
+            </div>
+        </div>
+
+        <!-- ─── Step 2: Camera ─── -->
+        <div class="card border-0 shadow-sm mb-3" id="camera-card"
+             style="display:none;">
+            <div class="card-body text-center p-4">
+                <i class="fas fa-camera fa-2x text-primary mb-2"></i>
+                <h5 class="fw-bold">Step 2 — Face Verification</h5>
+                <p class="text-muted mb-3">
+                    Look at the camera clearly and click <strong>Mark Attendance</strong>.
+                </p>
+
+                <div class="camera-container mx-auto mb-3">
+                    <video id="video" width="420" height="315" autoplay muted
+                           class="rounded" style="max-width:100%;
+                           border:3px solid #1a73e8;"></video>
+                    <canvas id="canvas" width="420" height="315"
+                            style="display:none;"></canvas>
+                </div>
+
+                <div id="face-result" class="mb-3"></div>
+
+                <button class="btn btn-primary btn-lg" id="markBtn"
+                        onclick="markAttendance()">
+                    <i class="fas fa-calendar-check me-2"></i>Mark Attendance
+                </button>
+            </div>
+        </div>
+
+        <!-- ─── Step 3: Success ─── -->
+        <div id="success-card" style="display:none;">
+            <div class="card border-0 shadow attendance-success">
+                <div class="card-body text-center p-4">
+                    <div class="success-icon mb-3">
+                        <i class="fas fa-check-circle fa-4x text-success"></i>
+                    </div>
+                    <h4 class="text-success fw-bold">✅ Attendance Marked Successfully!</h4>
+                    <div class="attendance-details mt-3" id="attendance-details"></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ─── Attendance History ─── -->
+        {% if history %}
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-white fw-bold border-bottom">
+                <i class="fas fa-history me-2 text-primary"></i>Recent Attendance History
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for h in history %}
+                        <tr>
+                            <td>
+                                {{ h.date.strftime('%d-%m-%Y')
+                                   if h.date else '-' }}
+                            </td>
+                            <td>{{ h.time if h.time else '-' }}</td>
+                            <td>
+                                <span class="badge bg-success">{{ h.status }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Passed from Flask
+const COLLEGE_LAT     = {{ college_lat }};
+const COLLEGE_LON     = {{ college_lon }};
+const GEOFENCE_RADIUS = {{ radius }};
+
+let userLat     = null;
+let userLon     = null;
+let videoStream = null;
+
+const video  = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx    = canvas ? canvas.getContext('2d') : null;
+
+/* ── Step 1: GPS ── */
+function getLocation() {
+    const btn    = document.getElementById('locationBtn');
+    const status = document.getElementById('location-status');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Getting GPS Location...';
+    status.textContent = 'Accessing your GPS... This may take a few seconds.';
+
+    if (!navigator.geolocation) {
+        locationError('Geolocation is not supported by your browser.');
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            userLat = pos.coords.latitude;
+            userLon = pos.coords.longitude;
+
+            const dist = haversine(userLat, userLon, COLLEGE_LAT, COLLEGE_LON);
+
+            document.getElementById('location-details').style.display = 'block';
+            document.getElementById('location-details').innerHTML =
+                `<i class="fas fa-crosshairs me-1 text-primary"></i>
+                 <small class="text-muted">
+                 Lat: ${userLat.toFixed(6)}, Lon: ${userLon.toFixed(6)}<br>
+                 Distance from campus: <strong>~${Math.round(dist)} meters</strong>
+                 (Allowed radius: ${GEOFENCE_RADIUS}m)
+                 </small>`;
+
+            if (dist <= GEOFENCE_RADIUS) {
+                status.innerHTML =
+                    '<span class="text-success fw-semibold">' +
+                    '<i class="fas fa-check-circle me-1"></i>' +
+                    'You are on campus! Proceeding to face scan...</span>';
+                btn.style.display = 'none';
+                document.getElementById('s1').className = 'step-circle done';
+                document.getElementById('s2').className = 'step-circle active';
+                document.getElementById('line1').style.background = '#28a745';
+                setTimeout(openCamera, 1200);
+            } else {
+                locationError(
+                    `You are OUTSIDE the college campus!<br>
+                     Distance: <strong>${Math.round(dist)}m</strong> —
+                     must be within <strong>${GEOFENCE_RADIUS}m</strong>.`
+                );
+            }
+        },
+        (err) => {
+            const msgs = {
+                1: 'Permission denied — please allow location access in your browser.',
+                2: 'Position unavailable — check your device GPS settings.',
+                3: 'Location request timed out — please try again.'
+            };
+            locationError(msgs[err.code] || err.message);
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+}
+
+function locationError(msg) {
+    document.getElementById('location-status').innerHTML =
+        `<span class="text-danger"><i class="fas fa-times-circle me-1"></i>${msg}</span>`;
+    const btn = document.getElementById('locationBtn');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-redo me-2"></i>Try Again';
+}
+
+/* ── Step 2: Camera ── */
+async function openCamera() {
+    document.getElementById('camera-card').style.display = 'block';
+    document.getElementById('camera-card').scrollIntoView({ behavior: 'smooth' });
+    try {
+        videoStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 420, height: 315, facingMode: 'user' }
+        });
+        video.srcObject = videoStream;
+    } catch (err) {
+        document.getElementById('face-result').innerHTML =
+            `<div class="alert alert-danger">
+             <i class="fas fa-video-slash me-2"></i>
+             Camera access denied! Please allow camera permission and refresh.
+             </div>`;
+    }
+}
+
+/* ── Step 3: Mark ── */
+async function markAttendance() {
+    const btn = document.getElementById('markBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verifying Face...';
+    document.getElementById('face-result').innerHTML = '';
+
+    // Capture current frame
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = canvas.toDataURL('image/jpeg', 0.85);
+
+    try {
+        const resp = await fetch('/verify_attendance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                latitude:  userLat,
+                longitude: userLon,
+                image:     imageData
+            })
+        });
+        const data = await resp.json();
+
+        if (data.success) {
+            // Stop camera
+            if (videoStream) videoStream.getTracks().forEach(t => t.stop());
+            document.getElementById('camera-card').style.display = 'none';
+
+            // Update steps
+            document.getElementById('s2').className = 'step-circle done';
+            document.getElementById('s3').className = 'step-circle done active';
+            document.getElementById('line2').style.background = '#28a745';
+
+            // Show details
+            const d = data.details;
+            document.getElementById('attendance-details').innerHTML = `
+                <div class="table-responsive">
+                <table class="table table-bordered text-start mb-0">
+                    <tr><th width="45%">Name</th><td>${d.name}</td></tr>
+                    <tr><th>Register No</th><td><code>${d.register_no}</code></td></tr>
+                    <tr><th>Department</th><td>${d.department}</td></tr>
+                    <tr><th>Date</th><td>${d.date}</td></tr>
+                    <tr><th>Time</th><td>${d.time}</td></tr>
+                    <tr><th>Status</th>
+                        <td><span class="badge bg-success fs-6">${d.status}</span></td></tr>
+                    <tr><th>Confidence</th>
+                        <td><span class="badge bg-info fs-6">${d.confidence}</span></td></tr>
+                </table>
+                </div>`;
+            document.getElementById('success-card').style.display = 'block';
+            document.getElementById('success-card').scrollIntoView({ behavior: 'smooth' });
+
+        } else {
+            document.getElementById('face-result').innerHTML =
+                `<div class="alert alert-danger">
+                 <i class="fas fa-times-circle me-2"></i>${data.message}
+                 </div>`;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-redo me-2"></i>Try Again';
+        }
+    } catch (err) {
+        document.getElementById('face-result').innerHTML =
+            `<div class="alert alert-danger">
+             <i class="fas fa-wifi me-2"></i>Network error — please try again.
+             </div>`;
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-calendar-check me-2"></i>Mark Attendance';
+    }
+}
+
+/* ── Haversine (client-side preview only) ── */
+function haversine(lat1, lon1, lat2, lon2) {
+    const R  = 6371000;
+    const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const a  = Math.sin(Δφ / 2) ** 2 +
+               Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+</script>
+{% endblock %}

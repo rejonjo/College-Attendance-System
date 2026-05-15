@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Student Registration{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow border-0">
+            <div class="card-header-custom text-white text-center py-3">
+                <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Student Registration</h4>
+            </div>
+            <div class="card-body p-4">
+                {% if error %}
+                <div class="alert alert-danger alert-dismissible fade show">
+                    <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+
+                <form method="POST" novalidate>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user text-primary"></i></span>
+                            <input type="text" name="name" class="form-control"
+                                   placeholder="Enter your full name" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Register Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-id-card text-primary"></i></span>
+                            <input type="text" name="register_no" class="form-control"
+                                   placeholder="e.g. 21CSE034" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Department</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-building text-primary"></i></span>
+                            <select name="department" class="form-select" required>
+                                <option value="">-- Select Department --</option>
+                                <option value="CSE">Computer Science & Engineering (CSE)</option>
+                                <option value="IT">Information Technology (IT)</option>
+                                <option value="ECE">Electronics & Communication (ECE)</option>
+                                <option value="EEE">Electrical & Electronics (EEE)</option>
+                                <option value="MECH">Mechanical Engineering (MECH)</option>
+                                <option value="CIVIL">Civil Engineering (CIVIL)</option>
+                                <option value="AIDS">AI & Data Science (AIDS)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope text-primary"></i></span>
+                            <input type="email" name="email" class="form-control"
+                                   placeholder="your@email.com" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock text-primary"></i></span>
+                            <input type="password" name="password" id="password"
+                                   class="form-control" placeholder="Min. 6 characters"
+                                   required minlength="6">
+                            <button class="btn btn-outline-secondary" type="button"
+                                    onclick="togglePw('password',this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Confirm Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock text-primary"></i></span>
+                            <input type="password" id="confirm_password"
+                                   class="form-control" placeholder="Re-enter password" required>
+                        </div>
+                        <div id="pw-match" class="form-text mt-1"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 btn-lg" id="submitBtn">
+                        <i class="fas fa-user-plus me-2"></i>Register & Continue to Face Setup
+                    </button>
+                </form>
+
+                <p class="text-center mt-3 text-muted">
+                    Already registered?
+                    <a href="{{ url_for('login') }}" class="text-primary fw-semibold">Login here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const pw  = document.getElementById('password');
+const cpw = document.getElementById('confirm_password');
+
+function togglePw(id, btn) {
+    const inp = document.getElementById(id);
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+    } else {
+        inp.type = 'password';
+        btn.innerHTML = '<i class="fas fa-eye"></i>';
+    }
+}
+
+function checkMatch() {
+    const div = document.getElementById('pw-match');
+    const btn = document.getElementById('submitBtn');
+    if (!cpw.value) { div.textContent = ''; return; }
+    if (pw.value === cpw.value) {
+        div.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Passwords match</span>';
+        btn.disabled = false;
+    } else {
+        div.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i>Passwords do not match</span>';
+        btn.disabled = true;
+    }
+}
+pw.addEventListener('input', checkMatch);
+cpw.addEventListener('input', checkMatch);
+</script>
+{% endblock %}

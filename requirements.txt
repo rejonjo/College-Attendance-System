@@ -1,0 +1,12 @@
+Flask==2.3.3
+PyMySQL==1.1.0
+bcrypt==4.0.1
+deepface==0.0.88
+opencv-python==4.8.1.78
+numpy==1.24.3
+openpyxl==3.1.2
+tensorflow==2.15.0
+Werkzeug==2.3.7
+scikit-learn==1.4.0        # ← NEW: KMeans clustering
+pandas==2.1.4              # ← NEW: Data processing
+matplotlib==3.7.1          # ← NEW: Visualization
